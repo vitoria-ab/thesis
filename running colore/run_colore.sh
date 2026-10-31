@@ -2,15 +2,18 @@
 #SBATCH --job-name=run_colore
 #SBATCH --account=f202315069pexf1a
 #SBATCH --partition=normal-arm
-#SBATCH --nodes=2
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=4
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=20G
 #SBATCH --time=00:10:00
 #SBATCH --output=run_colore_%j.out
 
-# Load modules
+# Set slurm definitions correctly
 set -e
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+
+# Load modules
 module purge
 module load GCC
 module load OpenMPI

@@ -3,6 +3,7 @@
 # Imports
 import sys
 import os
+import glob
 import warnings
 import numpy as np
 import matplotlib
@@ -20,19 +21,21 @@ def save_figure(path):
 
 # Function to load data
 def load_txt(path):
+    ''' Function to guarantee size of the files. '''
     if not os.path.isfile(path):
         warnings.warn(f"Missing input file: {path}")
         return None
     data = np.loadtxt(path)
     if data.ndim == 1:
-        data = data[None, :]
+        data = data[None,:]
     if data.shape[1] < 2:
         warnings.warn(f"Expected at least two columns in {path}")
         return None
     return data
 
-# Function to plot CoLoRe inputs
+
 def plot_inputs(input_dir, plot_dir):
+    ''' Plot inputs for CoLoRe and save them to a directory. '''
     # P(k): input used to generate the cosmological density field.
     data = load_txt(os.path.join(input_dir, "pk.txt"))
     if data is not None:
@@ -92,79 +95,61 @@ def plot_inputs(input_dir, plot_dir):
         plt.grid(True, axis="x", alpha=0.25)
         save_figure(os.path.join(plot_dir, "input_frequency_bins.png"))
 
-# Function to plot healpix map (not sure what this is)
-def plot_healpix_map(path, title, output_path, unit=None):
-    if not os.path.isfile(path):
-        warnings.warn(f"Missing map: {path}")
-        return
-    sky_map = hp.read_map(path)
-    hp.mollview(sky_map, title=title, unit=unit, cbar=True)
-    save_figure(output_path)
 
-def plot_galaxy_catalog(catalog_path, plot_dir):
-    if not os.path.isfile(catalog_path):
-        warnings.warn(f"Missing CoLoRe source catalogue: {catalog_path}")
-        return
+def plot_galaxies(input_dir, plot_dir):
+    ''' Plot several plots related to the galaxy catalog and save them to a directory. '''
 
+    catalog_path = os.path.join(input_dir, "colore_srcs_merged.fits")
     with fits.open(catalog_path, memmap=True) as hdul:
+        # Get redshift column
         cat = hdul[1].data
-        names = list(cat.dtype.names or [])
-        lower_to_actual = {name.lower(): name for name in names}
+        z = np.asarray(cat["Z_COSMO"], dtype=float)
 
-        z_name = next((lower_to_actual[n] for n in ("z", "z_cosmo", "zcosmo", "z_obs", "z_rsd", "redshift") if n in lower_to_actual), None)
-        if z_name is not None:
-            z = np.asarray(cat[z_name], dtype=float)
-            z = z[np.isfinite(z)]
-            if z.size:
-                plt.figure(figsize=(7, 5))
-                plt.hist(z, bins=50, histtype="step", linewidth=1.5)
-                plt.xlabel(f"{z_name} (catalogue redshift)")
-                plt.ylabel("Number of galaxies")
-                plt.title("CoLoRe galaxy redshift distribution")
-                plt.grid(True, alpha=0.25)
-                save_figure(os.path.join(plot_dir, "output_galaxy_redshift.png"))
-        else:
-            warnings.warn(f"No recognized redshift field in catalogue; available columns: {names}")
-
-        ra_name = lower_to_actual.get("ra")
-        dec_name = lower_to_actual.get("dec")
-        if ra_name is None or dec_name is None:
-            warnings.warn(f"Catalogue has no recognizable RA/DEC columns; available columns: {names}")
-            return
+        # Plot histogram of galaxies per redshift
+        plt.figure(figsize=(7, 5))
+        plt.hist(z, bins=50, histtype="step", linewidth=1.5)
+        plt.xlabel(f"Z_COSMO (catalog redshift)")
+        plt.ylabel("Number of galaxies")
+        plt.title("CoLoRe galaxy redshift distribution")
+        plt.grid(True, alpha=0.25)
+        save_figure(os.path.join(plot_dir, "output_galaxy_redshift.png"))
 
         # Galaxy-count overdensity, following the CoLoRe example notebook
         nside = 32
         npix = hp.nside2npix(nside)
-        ipix = hp.ang2pix(nside, cat[ra_name], cat[dec_name], lonlat=True)
+        ipix = hp.ang2pix(nside, cat["RA"], cat["DEC"], lonlat=True)
         ncount = np.bincount(ipix, minlength=npix)
         nmean = np.mean(ncount)
         delta = ncount / nmean - 1
-
         hp.mollview(delta, title=r"$\delta$")
         save_figure(os.path.join(plot_dir, "output_galaxy_overdensity.png"))
 
-# Function to plot HI maps
-def plot_hi_maps(input_dir, plot_dir, prefix):
-    nu_data = load_txt(os.path.join(input_dir, "nuTable.txt"))
-    if nu_data is None:
-        return
-    for i, (nu_low, nu_high) in enumerate(nu_data[:, :2]):
-        nu_mid = 0.5 * (nu_low + nu_high)
-        filename = f"{prefix}_imap_s1_nu{i:03d}.fits"
-        path = os.path.join(input_dir, filename)
-        plot_healpix_map(path, f"CoLoRe HI intensity map (nu={nu_mid:.2f} MHz)", os.path.join(plot_dir, f"output_hi_imap_nu{i:03d}.png"), unit="mK")
+
+def plot_HI(input_dir, plot_dir):
+    ''' Plot each HI map and save to a directory. '''
+    # Get all files of HI imaging
+    pattern = os.path.join(input_dir, f"colore_imap_s1_nu*.fits")
+    files = sorted(glob.glob(pattern))
+
+    # Sort through the files and plot each
+    for path in files:
+        filename = os.path.basename(path)
+        i = int(filename.split("_nu")[-1].replace(".fits", ""))
+        sky_map = hp.read_map(path)
+        title = f"CoLoRe HI intensity map (bin {i})"
+        hp.mollview(sky_map, title=title, unit="mK", cbar=True)
+        save_figure(os.path.join(plot_dir, f"output_hi_imap_nu{i:03d}.png"))
 
 # Create directories
-input_dir = os.path.abspath(sys.argv[1])
+input_dir = os.path.abspath("/projects/F202315069PEXF1/vitoria/running_colore/" + sys.argv[1])
 plot_dir = os.path.join(input_dir, "plots")
-prefix = "colore"
 os.makedirs(plot_dir, exist_ok=True)
 print(f"Input/output directory: {input_dir}")
 print(f"Saving plots to: {plot_dir}")
 
 # Plot results into directory
 plot_inputs(input_dir, plot_dir)
-plot_galaxy_catalog(os.path.join(input_dir, f"{prefix}_srcs_s1_0.fits"), plot_dir)
-plot_hi_maps(input_dir, plot_dir, prefix)
-print("Done. Review warnings above for missing files or catalogue fields.")
+plot_galaxies(input_dir, plot_dir)
+plot_HI(input_dir, plot_dir)
+print("Finished!")
 

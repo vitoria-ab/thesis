@@ -1,20 +1,18 @@
 #!/bin/bash
 #SBATCH --account=f202315069pexf1a
-#SBATCH --job-name=plots_colore
+#SBATCH --job-name=merge_galaxy_catalogs
 #SBATCH --time=00:10:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
+#SBATCH --mem=2G
 #SBATCH --partition=normal-arm
-#SBATCH --output=plots_colore_%j.out
+#SBATCH --output=merge_galaxy_catalogs_%j.out
 
 module load Anaconda3
-module load GSL
-module load FFTW
 eval "$(conda shell.bash hook)"
 conda activate /projects/F202315069PEXF1/vitoria/envs/env_thesis
 
-echo "Plotting results from $1..."
-python plots_colore.py $1
+echo "Merging results from $1..."
+python merge_galaxy_catalogs.py $1
 echo "Finished!"
