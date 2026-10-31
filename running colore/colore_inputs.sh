@@ -17,6 +17,6 @@ eval "$(conda shell.bash hook)"
 conda activate /projects/F202315069PEXF1/vitoria/envs/env_thesis
 
 # Run the specified python script
-echo "Generating CoLoRe inputs using colore_inputs$1.py..."
-python colore_inputs$1.py
+echo "Generating CoLoRe inputs using $1..."
+python $1
 echo "Finished!"
