@@ -15,6 +15,6 @@ module load FFTW
 eval "$(conda shell.bash hook)"
 conda activate /projects/F202315069PEXF1/vitoria/envs/env_thesis
 
-echo "Plotting galaxy plots sliced ($2-$3) from $1..."
+echo "Plotting plots sliced ($2-$3) from $1..."
 python galaxy_plots_sliced.py $1 $2 $3
 echo "Finished!"
