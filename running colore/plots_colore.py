@@ -1,5 +1,3 @@
-"""Plot only CoLoRe inputs and outputs relevant to galaxy distribution and HI intensity mapping."""
-
 # Imports
 import sys
 import os
@@ -87,7 +85,7 @@ def plot_inputs(input_dir, plot_dir):
         plt.figure(figsize=(7, 4.5))
         for i, (nu_low, nu_high) in enumerate(nu_data[:, :2]):
             plt.plot([nu_low, nu_high], [i, i], linewidth=5, solid_capstyle="butt")
-            plt.text((nu_low + nu_high) / 2, i + 0.12, f"{nu_low:.1f}–{nu_high:.1f} MHz", ha="center", fontsize=8)
+            plt.text((nu_low+nu_high)/2, i + 0.12, f"{nu_low:.1f}–{nu_high:.1f} MHz", ha="center", fontsize=8)
         plt.xlabel("Frequency [MHz]")
         plt.ylabel("Frequency-bin index")
         plt.yticks(range(len(nu_data)), [str(i) for i in range(len(nu_data))])
@@ -112,7 +110,7 @@ def plot_galaxies(input_dir, plot_dir):
         plt.ylabel("Number of galaxies")
         plt.title("CoLoRe galaxy redshift distribution")
         plt.grid(True, alpha=0.25)
-        save_figure(os.path.join(plot_dir, "output_galaxy_redshift.png"))
+        save_figure(os.path.join(plot_dir, "output_redshift.png"))
 
         # Galaxy-count overdensity, following the CoLoRe example notebook
         nside = 32
@@ -122,7 +120,7 @@ def plot_galaxies(input_dir, plot_dir):
         nmean = np.mean(ncount)
         delta = ncount / nmean - 1
         hp.mollview(delta, title=r"$\delta$")
-        save_figure(os.path.join(plot_dir, "output_galaxy_overdensity.png"))
+        save_figure(os.path.join(plot_dir, "output_overdensity.png"))
 
 
 def plot_HI(input_dir, plot_dir):
@@ -130,26 +128,35 @@ def plot_HI(input_dir, plot_dir):
     # Get all files of HI imaging
     pattern = os.path.join(input_dir, f"colore_imap_s1_nu*.fits")
     files = sorted(glob.glob(pattern))
+    nu_data = load_txt(os.path.join(input_dir, "nuTable.txt"))
 
     # Sort through the files and plot each
-    for path in files:
+    for i,path in enumerate(files):
+        # Get some information
         filename = os.path.basename(path)
-        i = int(filename.split("_nu")[-1].replace(".fits", ""))
+        nu_index = int(filename.split("_nu")[-1].replace(".fits", ""))
+        z_mean = 2 * 1420.405/(nu_data[i,0]+nu_data[i,1]) - 1
+        # Plot the maps
         sky_map = hp.read_map(path)
-        title = f"CoLoRe HI intensity map (bin {i})"
+        title = f"CoLoRe HI map (redshift z={z_mean:.3f}, bin {nu_index:03d})"
         hp.mollview(sky_map, title=title, unit="mK", cbar=True)
-        save_figure(os.path.join(plot_dir, f"output_hi_imap_nu{i:03d}.png"))
+        save_figure(os.path.join(plot_dir, f"output_hi_imap_nu{nu_index:03d}.png"))
 
-# Create directories
-input_dir = os.path.abspath("/projects/F202315069PEXF1/vitoria/running_colore/" + sys.argv[1])
+# Get input parameters
+zmin = float(sys.argv[2])
+zmax = float(sys.argv[3])
+dir = f"{sys.argv[1]}_{zmin}-{zmax}"
+
+# Define directories
+input_dir = os.path.abspath("/projects/F202315069PEXF1/vitoria/results/" + dir)
 plot_dir = os.path.join(input_dir, "plots")
 os.makedirs(plot_dir, exist_ok=True)
-print(f"Input/output directory: {input_dir}")
-print(f"Saving plots to: {plot_dir}")
+print(f"Input directory: {input_dir}")
+print(f"Plots directory: {plot_dir}")
 
 # Plot results into directory
 plot_inputs(input_dir, plot_dir)
-plot_galaxies(input_dir, plot_dir)
+#plot_galaxies(input_dir, plot_dir)
 plot_HI(input_dir, plot_dir)
 print("Finished!")
 

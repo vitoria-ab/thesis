@@ -9,8 +9,14 @@ from astropy.units import UnitsWarning
 # Ignore unit warnings raised by astropy
 warnings.filterwarnings("ignore", category=UnitsWarning)
 
+# Get input parameters
+zmin = float(sys.argv[2])
+zmax = float(sys.argv[3])
+dir = f"{sys.argv[1]}_{zmin}-{zmax}"
+
 # Define directories
-input_dir = Path("/projects/F202315069PEXF1/vitoria/running_colore/" + sys.argv[1])
+input_dir = os.path.abspath("/projects/F202315069PEXF1/vitoria/results/" + dir)
+print(f"Input directory: {input_dir}")
 output_file = input_dir / "colore_srcs_merged.fits"
 temp_file = input_dir / "colore_srcs_merged.tmp"
 

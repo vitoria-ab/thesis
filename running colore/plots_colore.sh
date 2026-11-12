@@ -15,6 +15,6 @@ module load FFTW
 eval "$(conda shell.bash hook)"
 conda activate /projects/F202315069PEXF1/vitoria/envs/env_thesis
 
-echo "Plotting results from $1..."
-python plots_colore.py $1
+echo "Plotting results from $1\_$2-$3..."
+python plots_colore.py $1 $2 $3
 echo "Finished!"

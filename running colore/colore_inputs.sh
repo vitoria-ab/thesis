@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --account=f202315069pexf1a
 #SBATCH --job-name=colore_inputs
-#SBATCH --time=00:10:00
+#SBATCH --time=00:30:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
+#SBATCH --mem=10G
 #SBATCH --partition=normal-arm
 #SBATCH --output=colore_inputs_%j.out
 
@@ -17,6 +17,6 @@ eval "$(conda shell.bash hook)"
 conda activate /projects/F202315069PEXF1/vitoria/envs/env_thesis
 
 # Run the specified python script
-echo "Generating CoLoRe inputs using $1..."
-python $1
+echo "Generating CoLoRe inputs for $1\_$2-$3..."
+python colore_inputs.py $1 $2 $3
 echo "Finished!"

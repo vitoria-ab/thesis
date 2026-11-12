@@ -13,6 +13,6 @@ module load Anaconda3
 eval "$(conda shell.bash hook)"
 conda activate /projects/F202315069PEXF1/vitoria/envs/env_thesis
 
-echo "Merging results from $1..."
-python merge_galaxy_catalogs.py $1
+echo "Merging results from $1\_$2-$3..."
+python merge_galaxy_catalogs.py $1 $2 $3
 echo "Finished!"
