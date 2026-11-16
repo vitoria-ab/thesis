@@ -40,13 +40,13 @@ print(f"Plots directory: {plot_dir}")
 # Open galaxy catalog and get data
 with fits.open(catalog_path, memmap=True) as hdul:
     cat = hdul[1].data
-    mask = (cat['Z_COSMO'] >= zmin) & (cat['Z_COSMO'] <= zmax)
-    z = np.asarray(cat["Z_COSMO"], dtype=float)[mask]  # <-- not sure if i need z!
+    zs = cat["Z_COSMO"] + cat["DZ_RSD"]  # <-- including RSD
+    mask = (zs>=zmin) & (zs<=zmax)
     positions = np.array([cat['RA'][mask], cat['DEC'][mask]])
 print_state("Catalog read")
 
 # Define NaMaster parameters
-nside = 256
+nside = 128
 lmax = 2 * nside
 weights = np.ones(len(positions[0]))
 
@@ -70,7 +70,7 @@ f_cat = nmt.NmtFieldCatalogClustering(positions, weights, None, None,
 mm_matrix = nmt.NmtWorkspace.from_fields(f_cat, f_cat, bands)  # <-- mode-coupling matrix
 pseudo_cl = nmt.compute_coupled_cell(f_cat, f_cat)  # <-- pseudo Cls
 cls = mm_matrix.decouple_cell(pseudo_cl)[0]
-fname = os.path.join(input_dir, f"cls_namaster_{zmin}-{zmax}.txt")
+fname = os.path.join(input_dir, f"cls_namaster_wRSD_{zmin}-{zmax}.txt")
 np.savetxt(fname, np.column_stack((ells, cls)), header="ell Cl")
 print_state("Cls done")
 
@@ -90,5 +90,5 @@ plt.ylabel(r"$C_\ell$")
 plt.title("Galaxy angular power spectrum (NaMaster)")
 plt.yscale("log")
 plt.grid(True, alpha=0.25)
-save_figure(os.path.join(plot_dir, f"cls_namaster_{zmin}-{zmax}.png"))
+save_figure(os.path.join(plot_dir, f"cls_namaster_wRSD_{zmin}-{zmax}.png"))
 print_state("Finished")
